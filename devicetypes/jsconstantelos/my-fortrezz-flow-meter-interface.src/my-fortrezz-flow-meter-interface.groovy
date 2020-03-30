@@ -101,12 +101,6 @@ def parse(String description) {
 			results << createEvent( zwaveEvent(cmd) )
 		}
 	}
-	//log.debug "\"$description\" parsed to ${results.inspect()}"
-    /* We dont need gallonThreshold
-    if(gallonThreshhold != device.currentValue("lastThreshhold"))
-    {
-    	results << setThreshhold(gallonThreshhold)
-    }*/
     
 	log.debug "zwave parsed to ${results.inspect()}"
 	return results
@@ -120,8 +114,7 @@ def updated()
 def configure() {
 	log.debug "Configuring FortrezZ flow meter interface (FMI)..."
 	log.debug "Setting reporting interval to ${reportThreshhold}"
-	//log.debug "Setting gallon threshhold to ${gallonThreshhold}"
-    //sendEvent(name: "lastThreshhold", value: gallonThreshhold, displayed: false)
+
     def cmds = delayBetween([
 		zwave.configurationV2.configurationSet(configurationValue: [(int)Math.round(reportThreshhold)], parameterNumber: 4, size: 1).format(),
     	zwave.configurationV2.configurationSet(configurationValue: [(int)Math.round(gallonThreshhold*10)], parameterNumber: 5, size: 1).format()
@@ -129,17 +122,6 @@ def configure() {
     log.debug "Configuration report for FortrezZ flow meter interface (FMI): '${cmds}'"
     cmds
 }
-
-
-/*
-def setHighFlowLevel(level)
-{
-	setThreshhold(level)
-}
-*/
-
-
-
 
 def zero()
 {
@@ -161,8 +143,6 @@ def resetAlarmState()
 	def localTime = now() //new Date()     
 	def timeElapsed = localTime - device.currentState('currentFlowStartTime').date.getTime()
     def localNow = now()
-	//def timeElapsedSeconds = timeElapsed.seconds
-	//def totalWaterUsed = device.currentState('currentFlowMeterStart').doubleValue - cmd.scaledMeterValue
 	
 	//def averageFlow
 	if (state.debug) log.debug "Local time: ${localTime}.  CurrentFlowStartTime: ${device.currentState('currentFlowStartTime').date}.  Time elapsed is ${timeElapsed}"
@@ -202,41 +182,13 @@ def zwaveEvent(hubitat.zwave.commands.sensormultilevelv5.SensorMultilevelReport 
 	        map.value = cmd.scaledSensorValue
         }
         map.unit = location.temperatureScale
-	} /* else if(cmd.sensorType == 2) {
-    	map = [name: "waterState"]
-        if(cmd.sensorValue[0] == 0x80) {
-        	map.value = "flow"
-            sendEvent(name: "water", value: "dry")
-        } else if(cmd.sensorValue[0] == 0x00) {
-	        map.value = "none"
-            sendEvent(name: "water", value: "dry")
-        } else if(cmd.sensorValue[0] == 0xFF) {
-	        map.value = "overflow"
-            sendEvent(name: "water", value: "wet")
-            sendAlarm("waterOverflow")
-        }
-	} */
+	} 
 	return map
 }
 
 def zwaveEvent(hubitat.zwave.commands.meterv3.MeterReport cmd)
 {
 	
-	/* Old code
-	def map = [:]
-    map.name = "gpm"
-    def delta = cmd.scaledMeterValue - cmd.scaledPreviousMeterValue
-    if (delta < 0 || delta > 10000) {
-        log.error(cmd)
-    	delta = 0
-    }
-
-    map.value = delta
-    map.unit = "gpm"
-    //sendDataToCloud(delta)
-    sendEvent(name: "cumulative", value: cmd.scaledMeterValue, displayed: false, unit: "gal")
-	return map
-	*/
 	
 	if (state.debug) log.debug "scaledMeterValue is ${cmd.scaledMeterValue}"
     if (state.debug) log.debug "scaledPreviousMeterValue is ${cmd.scaledPreviousMeterValue}"
